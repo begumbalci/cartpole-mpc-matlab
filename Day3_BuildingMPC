@@ -1,0 +1,98 @@
+% Goal: turn the prediction matrices (M, Phi) from Day 2 into an actual
+% MPC cost function, then solve it as a QP to get the optimal control
+% sequence U. single open-loop prediction
+clc;
+close all;
+load('cart_pole_system.mat');
+
+N=10;
+n = size(A,1);
+m_in=size(B,2);
+
+Phi = zeros(N*n, N*m_in);
+
+for row = 1:N
+    row_idx = (row-1)*n + 1 : row*n;
+    for col = 1:row
+        col_idx = (col-1)*m_in + 1 : col*m_in;
+        power = row - col;
+        Phi(row_idx, col_idx) = A^power * B;
+    end
+end
+
+%Penalty for state being away from ref state Q
+Q= diag([10, 1, 100, 1]);
+
+%Using a horizontal force U should has a cost R
+R =  0.1;
+% Bypass idare and use a weighted terminal cost directly
+Q_N = 10 * Q; 
+
+% Now build Qbar safely
+Qbar = blkdiag(kron(eye(N-1), Q), Q_N);
+P = idare(A,B,Q,R);
+idx = (N-1)*n+1 : N*n;
+Qbar(idx, idx) = P;
+disp(['Size of Q_N: ', num2str(size(Q_N))]);
+%Define a initial state
+
+x0=[0;0;0.2;0];
+
+%Define a target state 
+
+x_ref = [0;0;0;0];
+
+%Define reference for prediction horizon
+
+X_ref = repmat(x_ref,N,1);
+
+%Build penalty matrix such that we punish the entire 
+% prediction horizon (N) 
+
+Qbar = blkdiag(kron(eye(N-1), Q), Q_N);
+Rbar = kron(eye(N),R);
+
+%%Building QP matrices
+
+%By relating the MPC function to the 
+% quadprog form find the H and f
+H = 2*(Phi' * Qbar * Phi + Rbar);
+
+%Because we are using quadprog for avoiding error can be caused by symmetry
+%we forse symmetry
+
+H = (H + H')/2;
+
+
+f = 2*Phi'*Qbar*(M*x0 - X_ref);
+
+options = optimoptions('quadprog','Display','off');
+[U, cost, exitflag] = quadprog(H, f, [], [], [], [], [], [], [], options);
+
+if exitflag == 1
+    fprintf('QP solved. First control the input sequence (u0): %f\n',U(1));
+else
+    warning('QP did not solved check exitflag');
+end
+
+
+%%Sanity check
+
+x_pred = M*x0 + Phi*U;
+x_pred = reshape(x_pred, n, N);
+figure;
+subplot(2,1,1);
+plot(0:N-1, x_pred(3,:), '-o');
+xlabel('Prediction step');
+ylabel('Pole angle(rad)');
+title('Predicted pole angle over the horizon');
+grid on;
+
+subplot(2,1,2);
+stairs(0:N-1,U,'-o');
+xlabel('Prediction step');
+ylabel('Predicted control input sequence U');
+grid on;
+
+save('cart_pole_system.mat');
+disp('Day 3 done, saved H/f for Day 4 (closed loop simulation)');
