@@ -1,0 +1,55 @@
+% Cart pole animation
+clc;
+close all;
+load('cart_pole_system.mat');
+
+
+figure;
+hold on;
+grid on;
+
+xlabel('Position (m)');
+ylabel('Height (m)');
+title('Cart Pole Animation');
+
+axis equal;
+line([-1 1], [0 0], 'LineWidth', 2);
+% Draw the cart
+
+cart_width = 0.3;
+cart_height = 0.15;
+cart_x = x_history(1,1); % Cart position at first time step(center)
+cart_y = 0 ;
+pole_length =0.5;
+theta = x_history(3,1); % Pole angle at start
+
+% Making the rect a object variable we create once and than update 
+cart = rectangle('Position', [cart_x-cart_width/2, cart_y, cart_width, cart_height]);
+
+xlim([-1 1]);
+ylim([-0.2 1]);
+
+% Calculating where the pole endpoints
+pole_x = cart_x + pole_length*sin(theta);
+pole_y = cart_y + cart_height + pole_length*cos(theta);
+
+% Drawing the pole
+pole = line([cart_x pole_x], [cart_y+cart_height pole_y], 'LineWidth', 3);
+
+% Since number of columns gives the time steps we
+% update the cart position every time step
+for step = 1:size(x_history,2)
+    cart_x = x_history(1,step);
+    cart.Position = [cart_x-cart_width/2, cart_y, cart_width, cart_height];
+
+    theta = x_history(3,step);
+    
+    pole_x = cart_x + pole_length*sin(theta);
+    pole_y = cart_y + cart_height + pole_length*cos(theta);
+    pole.XData = [cart_x pole_x];
+    pole.YData = [cart_y + cart_height pole_y];
+    drawnow; % Shows every step
+   
+end
+
+drawnow;
