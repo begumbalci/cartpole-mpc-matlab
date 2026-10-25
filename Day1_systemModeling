@@ -1,0 +1,53 @@
+% CartPole Project
+
+%Physical Constants of the System
+Mc = 1.0; % mass of cart kg
+m = 0.2; % mass of pendulum kg
+k = 0.1; % friction coefficient
+l = 0.5; % length of the pendulum from center of mass
+den = l*Mc; % Derived from den(exact)= l * (M + m * sin(0)^2)
+g = 9.81;
+
+%Ac matrix derived from 
+
+Ac = [  0,        1,              0,         0;
+        0,     -k/Mc,       -(m*g)/Mc,         0;
+        0,        0,              0,         1;
+        0,    k/den,  ((Mc+m)*g)/den,         0];
+
+
+Bc = [     0;
+         1/Mc;
+           0;
+        1/den];
+
+Cc = eye(4); % Identity matrix for feedback
+
+Dc = zeros(4,1); % No Direct Feedthrough exist
+
+Co = ctrb(Ac,Bc); % Control ability check
+
+if rank(Co) == 4
+ open_loop_poles = eig(Ac); %Computing eigenvalues of Ac
+ disp('Continuous Open-Loop Poles:');
+ disp(open_loop_poles);
+end
+
+ Ts = 0.05;  %Sampling time 50ms
+ 
+ % Continuous-time state-space system creation
+ sysc = ss(Ac, Bc, Cc, Dc);
+ sys_d = c2d(sysc,Ts,'zoh');
+ 
+ A = sys_d.A;
+ B = sys_d.B;
+ C = sys_d.C;
+ D = sys_d.D;
+  
+ disp('Discretization Complete');
+ disp('Discrete A Matrix (4x4):'); disp(A);
+ disp('Discrete B Matrix (4x1):'); disp(B);
+
+save('cart_pole_system.mat', 'A', 'B', 'C', 'D', 'Ts', 'Mc', 'm', 'l', 'g');
+
+
