@@ -1,0 +1,25 @@
+
+% Making constrains for the control inputs 
+clc;
+close all;
+
+u_max = 20;
+
+u_min = -u_max;
+%Because we have N future inputs we need lb,ub for each of them
+
+lb = u_min * ones(N*m_in,1);
+ub = u_max * ones(N*m_in,1);
+
+
+stairs(t_history(1:end-1), u_history(1,:), 'LineWidth', 1.5);
+hold on;
+
+yline(u_max, '--', 'Maximum force');
+yline(u_min, '--', 'Minimum force');
+
+xlabel('Time (s)');
+ylabel('Control force (N)');
+title('Control Input with Constraints');
+
+grid on;
