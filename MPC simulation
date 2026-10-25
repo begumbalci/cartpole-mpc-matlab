@@ -1,0 +1,85 @@
+% Full closed-loop Model Predictive Control (MPC) simulation over time.
+clc;
+close all;
+load('cart_pole_system.mat');
+
+%realtime steps to simulate
+
+ssteps = 100;
+
+%we are reusing the x0 from day3 for starting condition and updating it for
+%every loop cycle
+
+x_current = x0;
+
+H = 2 * (Phi'*Qbar*Phi + Rbar);
+H = (H + H')/2;
+options = optimoptions('quadprog','Display','off');
+
+%Storage setup
+
+x_history = zeros(n,ssteps+1);%Plus one needed for first step
+u_history = zeros(m_in, ssteps);
+t_history = (0:ssteps)*Ts; %Time vector for plotting
+x_history(:,1) = x_current;
+
+%MPC main loop
+
+for step = 1:ssteps
+   % f depends on x_current, so we calculate it inside the loop
+   f = 2 * Phi' * Qbar * (M*x_current - X_ref);
+
+   [U_opt, ~, exitflag] = quadprog(H, f, [], [], [], [], [], [], [], options);
+   
+        if exitflag ~= 1
+        warning('QP failed at step %d, stopping simulation', step);
+        break;
+        end
+    u0 = U_opt(1:m_in); %Subtract the first move
+    x_next = A*x_current + B*u0;
+    % we only store u0 but u0 changes at every iteration for every xcurrent
+    % so only taking the first input
+    u_history(:,step)= u0;
+    x_history(:,step+1) = x_next;
+    x_current = x_next;
+end
+
+disp('Day 4 simulation finished');
+
+%% 6. Plot the REAL trajectory over time (not just one prediction anymore)
+
+figure;
+
+subplot(3,1,1);
+plot(t_history, x_history(1,:), '-');
+xlabel('Time (s)');
+ylabel('Cart position (m)');
+title('Cart position over time');
+grid on;
+
+subplot(3,1,2);
+plot(t_history, x_history(3,:), '-');
+xlabel('Time (s)');
+ylabel('Pole angle (rad)');
+title('Pole angle over time');
+grid on;
+
+subplot(3,1,3);
+stairs(t_history(1:end-1), u_history(1,:), '-');
+xlabel('Time (s)');
+ylabel('Force (N)');
+title('Control force over time');
+grid on;
+
+%Let us check the prediction model on day2 is correct
+
+disp('Checking M...');
+
+for i = 1:N
+    expected = A^i;
+    actual = M((i-1)*n+1:i*n, :);
+
+    error_M = norm(actual - expected);
+
+    fprintf('Prediction step %d: M error = %.12f\n', i, error_M);
+end
