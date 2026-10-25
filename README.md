@@ -44,7 +44,7 @@ The repository follows a clean, chronological development structure from initial
 | `Day6_RealWorldLimits.m` | **Actuator Saturation Limits** | Introduces lower and upper control bounds to force optimization within hardware constraints. |
 | `Day7_DynamicVisualization.m` | **Real-Time Graphics** | Draws and animates the cart chassis and pendulum rod dynamically from recorded state history. |
 | `Day8_EvaluateSystem.m` | **System Evaluation & Metrics** | Plots tracking error, position response, and pole angles while printing peak angle and maximum control force constraints. |
-| `Day9_RealvsIdeal.m` | **Constrained vs. Unconstrained MPC** | Runs side-by-side performance benchmarking comparing unconstrained vs. constrained tracking error, control force saturation, and pole angle transients. |
+| `Day9_ConstrainedvsUnconstrained.m` | **Constrained vs. Unconstrained MPC** | Runs side-by-side performance benchmarking comparing unconstrained vs. constrained tracking error, control force saturation, and pole angle transients. |
 
 ---
 
